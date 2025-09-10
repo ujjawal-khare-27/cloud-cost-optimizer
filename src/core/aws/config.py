@@ -13,8 +13,7 @@ class Config:
     def __init__(self):
         self._env = os.getenv("ENV", "prod")
         self._config = CONFIG_MAP[self._env]
+
     @property
     def get_supported_services(self) -> List[str]:
         return self._config.get("services")
-
-
