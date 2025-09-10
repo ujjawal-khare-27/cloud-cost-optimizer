@@ -124,8 +124,10 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.assertEqual(len(result), 2)
 
         # Check that we have the load balancer with no targets
-        lb_names = [lb["LoadBalancerName"] for lb in result]
+        lb_names = [lb["LoadBalancerName"] for lb in result[0]["no_targets_lb"]]
         self.assertIn("test-lb-no-targets", lb_names)
+
+        lb_names = [lb["LoadBalancerName"] for lb in result[1]["all_unhealthy"]]
         self.assertIn("test-lb-all-unhealthy", lb_names)
 
         # Should not include the healthy load balancer
@@ -169,7 +171,7 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         result = handler.find_under_utilized_resource()
 
         # Should return empty list since not ALL instances are unhealthy
-        self.assertEqual([], result)
+        self.assertEqual([{'no_targets_lb': []}, {'all_unhealthy': []}], result)
 
     @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
     def test_find_under_utilized_resource_api_error_in_get_list(self, mock_boto3_client):

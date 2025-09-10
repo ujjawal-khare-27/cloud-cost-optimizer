@@ -19,7 +19,7 @@ class LoadBalancerResourceHandlers(ResourceHandler):
         return response.get("LoadBalancerDescriptions", [])
 
     @staticmethod
-    def _get_lb_with_no_targets(self, lb_list: List[Dict]):
+    def _get_lb_with_no_targets(lb_list: List[Dict]):
         lb_with_no_targets = []
 
         for lb in lb_list:
@@ -62,4 +62,7 @@ class LoadBalancerResourceHandlers(ResourceHandler):
         lb_list = self._get_list()
         no_targets = self._get_lb_with_no_targets(lb_list)
         all_unhealthy = self._get_lb_with_all_unhealthy_targets(lb_list)
-        return no_targets + all_unhealthy
+
+        underutilized_resource = [{"no_targets_lb": no_targets}, {"all_unhealthy": all_unhealthy}]
+
+        return underutilized_resource
