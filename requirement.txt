@@ -1,4 +1,3 @@
-dataclass
-boto3
-abc
-black
+dataclasses-json~=0.6.7
+boto3~=1.34.106
+black~=25.1.0
