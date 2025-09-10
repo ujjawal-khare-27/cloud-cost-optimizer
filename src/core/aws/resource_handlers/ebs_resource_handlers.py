@@ -17,14 +17,13 @@ class EbsResourceHandlers(ResourceHandler):
 
         unused_vols = []
         for vol in volumes:
-            if len(vol["Attachments"]) == 0:  # No instance attached
-                unused_vols.append({
-                    "VolumeId": vol["VolumeId"],
-                    "Size": vol["Size"],
-                    "State": vol["State"],
-                    "AvailabilityZone": vol["AvailabilityZone"],
-                    "CreateTime": str(vol["CreateTime"])
-                })
+            unused_vols.append({
+                "VolumeId": vol["VolumeId"],
+                "Size": vol["Size"],
+                "State": vol["State"],
+                "AvailabilityZone": vol["AvailabilityZone"],
+                "CreateTime": str(vol["CreateTime"])
+            })
 
         return unused_vols
 

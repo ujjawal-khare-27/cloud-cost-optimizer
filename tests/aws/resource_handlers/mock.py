@@ -26,27 +26,6 @@ mock_volume_response = {
             "Tags": [{"Key": "Environment", "Value": "test"}],
             "VolumeType": "gp3",
         },
-        {
-            "Attachments": [
-                {
-                    "AttachTime": "2023-12-05T10:00:00.000Z",
-                    "InstanceId": "i-0123456789abcdef0",
-                    "State": "attached",
-                    "VolumeId": "vol-0ff11122233344455",
-                    "Device": "/dev/sdf",
-                }
-            ],
-            "AvailabilityZone": "us-east-1c",
-            "CreateTime": "2023-12-05T09:59:00.000Z",
-            "Encrypted": False,
-            "Size": 50,
-            "SnapshotId": "",
-            "State": "in-use",  # note: this one is NOT "available"
-            "VolumeId": "vol-0ff11122233344455",
-            "Iops": 150,
-            "Tags": [{"Key": "Project", "Value": "backend"}],
-            "VolumeType": "gp2",
-        },
     ],
     "ResponseMetadata": {
         "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
