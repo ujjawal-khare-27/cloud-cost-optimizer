@@ -3,6 +3,7 @@ from typing import List
 
 from src.core.aws.config import Config
 from src.core.aws.resource_handlers.ebs_resource_handlers import EbsResourceHandlers
+from src.core.aws.resource_handlers.lb_handlers import LoadBalancerResourceHandlers
 from src.core.utils import get_common_elements
 
 
@@ -14,7 +15,8 @@ class AwsCostManager:
         self._supported_services = self._config.get_supported_services
         self._region = region
         self._resource_strategy = {
-            "ebs": EbsResourceHandlers(self._region)
+            "ebs": EbsResourceHandlers(self._region),
+            "lb": LoadBalancerResourceHandlers(self._region),
         }
 
     def get_unused_resources(self, services: List[str] = []):
