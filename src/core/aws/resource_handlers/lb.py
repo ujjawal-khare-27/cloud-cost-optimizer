@@ -58,11 +58,11 @@ class LoadBalancerResourceHandlers(ResourceHandler):
 
         return lb_with_all_unhealthy_targets
 
-    def find_under_utilized_resource(self) -> List[Dict]:
+    def find_under_utilized_resource(self) -> Dict:
         lb_list = self._get_list()
         no_targets = self._get_lb_with_no_targets(lb_list)
         all_unhealthy = self._get_lb_with_all_unhealthy_targets(lb_list)
 
-        underutilized_resource = [{"no_targets_lb": no_targets}, {"all_unhealthy": all_unhealthy}]
+        underutilized_resource = {"no_targets_lb": no_targets, "all_unhealthy": all_unhealthy}
 
         return underutilized_resource

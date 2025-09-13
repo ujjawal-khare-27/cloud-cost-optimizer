@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from src.core.aws.resource_handlers.ebs_resource_handlers import EbsResourceHandlers
+from src.core.aws.resource_handlers.ebs import EbsResourceHandlers
 from tests.aws.resource_handlers.mock import mock_volume_response
 
 
@@ -10,7 +10,7 @@ class TestEbsResourceHandlers(unittest.TestCase):
         self.region_name = "us-east-1"
         self.ebs_handler = EbsResourceHandlers(self.region_name)
 
-    @patch("src.core.aws.resource_handlers.ebs_resource_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_find_under_utilized_resource_with_volumes(self, mock_boto3_client):
         """Test find_under_utilized_resource with available volumes"""
         # Create a mock EC2 client
@@ -25,22 +25,24 @@ class TestEbsResourceHandlers(unittest.TestCase):
         unused_resources = ebs_handler.find_under_utilized_resource()
 
         # Expected format based on the actual EbsResourceHandlers implementation
-        expected_unused_resources = [
-            {
-                "VolumeId": "vol-0123456789abcdef0",
-                "Size": 8,
-                "State": "available",
-                "AvailabilityZone": "us-east-1a",
-                "CreateTime": "2023-10-01T12:34:56.000Z",
-            },
-            {
-                "VolumeId": "vol-0abcdef1234567890",
-                "Size": 20,
-                "State": "available",
-                "AvailabilityZone": "us-east-1b",
-                "CreateTime": "2023-11-15T08:22:10.000Z",
-            },
-        ]
+        expected_unused_resources = {
+            "unused_ebs_volumes": [
+                {
+                    "VolumeId": "vol-0123456789abcdef0",
+                    "Size": 8,
+                    "State": "available",
+                    "AvailabilityZone": "us-east-1a",
+                    "CreateTime": "2023-10-01T12:34:56.000Z",
+                },
+                {
+                    "VolumeId": "vol-0abcdef1234567890",
+                    "Size": 20,
+                    "State": "available",
+                    "AvailabilityZone": "us-east-1b",
+                    "CreateTime": "2023-11-15T08:22:10.000Z",
+                },
+            ]
+        }
 
         # Verify the boto3 client was called correctly
         mock_boto3_client.assert_called_once_with("ec2", region_name="us-east-1")
@@ -48,7 +50,7 @@ class TestEbsResourceHandlers(unittest.TestCase):
 
         self.assertEqual(expected_unused_resources, unused_resources)
 
-    @patch("src.core.aws.resource_handlers.ebs_resource_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_find_under_utilized_resource_empty_response(self, mock_boto3_client):
         """Test find_under_utilized_resource with empty response"""
         # Create a mock EC2 client
@@ -63,9 +65,9 @@ class TestEbsResourceHandlers(unittest.TestCase):
         unused_resources = ebs_handler.find_under_utilized_resource()
 
         # Should return empty list
-        self.assertEqual([], unused_resources)
+        self.assertEqual({"unused_ebs_volumes": []}, unused_resources)
 
-    @patch("src.core.aws.resource_handlers.ebs_resource_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_find_under_utilized_resource_api_error(self, mock_boto3_client):
         """Test find_under_utilized_resource when API call fails"""
         # Create a mock EC2 client
