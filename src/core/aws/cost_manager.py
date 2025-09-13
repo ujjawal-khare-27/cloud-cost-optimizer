@@ -25,7 +25,11 @@ class AwsCostManager:
     def get_unused_resources(self, services: List[str] = []):
         unused_resources = []
 
-        services = get_common_elements(self._supported_services, services)
+        if len(services) != 0:
+            services = get_common_elements(self._supported_services, services)
+        else:
+            services = self._supported_services
+
         for service in services:
             unused_resources.append({service: self._resource_strategy[service].find_under_utilized_resource()})
 
