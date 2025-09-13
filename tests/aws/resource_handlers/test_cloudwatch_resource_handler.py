@@ -54,19 +54,35 @@ class TestCloudWatchResourceHandler(unittest.TestCase):
         result = cloudwatch.get_metrics(cloudwatch_metric)
 
         # Verify the call was made correctly
+        expected_metric_data_queries = [
+            {
+                "Id": "m1",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/RDS",
+                        "MetricName": "DatabaseConnections",
+                        "Dimensions": [{"Name": "DBInstanceIdentifier", "Value": "test-db"}]
+                    },
+                    "Period": 600,
+                    "Stat": "Maximum",
+                    "Unit": "Count",
+                },
+                "ReturnData": True,
+            }
+        ]
+        
         mock_cw_client.get_metric_data.assert_called_once_with(
-            Namespace="AWS/RDS",
-            MetricName="DatabaseConnections",
-            Dimensions=[{"Name": "DBInstanceIdentifier", "Value": "test-db"}],
+            MetricDataQueries=expected_metric_data_queries,
             StartTime=start_time,
             EndTime=end_time,
-            Period=600,
-            Statistics=["Maximum"],
-            Unit="Count",
         )
 
         # Verify the result
-        expected_datapoints = mock_cloudwatch_metric_response["Datapoints"]
+        expected_datapoints = [
+            {"Timestamp": "2023-10-01T12:00:00.000Z", "Maximum": 5.0, "Unit": "Count"},
+            {"Timestamp": "2023-10-01T12:10:00.000Z", "Maximum": 3.0, "Unit": "Count"},
+            {"Timestamp": "2023-10-01T12:20:00.000Z", "Maximum": 0.0, "Unit": "Count"},
+        ]
         self.assertEqual(result, expected_datapoints)
         self.assertEqual(len(result), 3)
         self.assertEqual(result[0]["Maximum"], 5.0)
@@ -145,30 +161,47 @@ class TestCloudWatchResourceHandler(unittest.TestCase):
         result = cloudwatch.get_metrics(cloudwatch_metric)
 
         # Verify default values are used
+        expected_metric_data_queries = [
+            {
+                "Id": "m1",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/EC2",
+                        "MetricName": "CPUUtilization",
+                        "Dimensions": [{"Name": "InstanceId", "Value": "i-1234567890abcdef0"}]
+                    },
+                    "Period": 600,  # Default period
+                    "Stat": "Maximum",  # Default statistics
+                    "Unit": "Count",  # Default unit
+                },
+                "ReturnData": True,
+            }
+        ]
+        
         mock_cw_client.get_metric_data.assert_called_once_with(
-            Namespace="AWS/EC2",
-            MetricName="CPUUtilization",
-            Dimensions=[{"Name": "InstanceId", "Value": "i-1234567890abcdef0"}],
+            MetricDataQueries=expected_metric_data_queries,
             StartTime=start_time,
             EndTime=end_time,
-            Period=600,  # Default period
-            Statistics=["Maximum"],  # Default statistics
-            Unit="Count",  # Default unit
         )
 
-        self.assertEqual(result, mock_cloudwatch_metric_response["Datapoints"])
+        expected_datapoints = [
+            {"Timestamp": "2023-10-01T12:00:00.000Z", "Maximum": 5.0, "Unit": "Count"},
+            {"Timestamp": "2023-10-01T12:10:00.000Z", "Maximum": 3.0, "Unit": "Count"},
+            {"Timestamp": "2023-10-01T12:20:00.000Z", "Maximum": 0.0, "Unit": "Count"},
+        ]
+        self.assertEqual(result, expected_datapoints)
 
     @patch("src.core.utils.boto3.client")
     def test_get_metrics_missing_datapoints(self, mock_boto3_client):
-        """Test get_metrics when response doesn't contain Datapoints key"""
+        """Test get_metrics when response doesn't contain MetricDataResults key"""
         mock_cw_client = MagicMock()
         mock_boto3_client.return_value = mock_cw_client
 
-        # Response without Datapoints key
-        response_without_datapoints = {
+        # Response without MetricDataResults key
+        response_without_results = {
             "ResponseMetadata": {"RequestId": "12345678-90ab-cdef-1234-567890abcdef", "HTTPStatusCode": 200}
         }
-        mock_cw_client.get_metric_data.return_value = response_without_datapoints
+        mock_cw_client.get_metric_data.return_value = response_without_results
 
         cloudwatch = CloudWatch("us-east-1")
 
@@ -185,8 +218,8 @@ class TestCloudWatchResourceHandler(unittest.TestCase):
 
         result = cloudwatch.get_metrics(cloudwatch_metric)
 
-        # Should return None when Datapoints key is missing
-        self.assertIsNone(result)
+        # Should return empty list when MetricDataResults key is missing
+        self.assertEqual(result, [])
 
     @patch("src.core.utils.boto3.client")
     def test_get_metrics_multiple_dimensions(self, mock_boto3_client):
@@ -217,20 +250,35 @@ class TestCloudWatchResourceHandler(unittest.TestCase):
         result = cloudwatch.get_metrics(cloudwatch_metric)
 
         # Verify multiple dimensions are passed correctly
-        expected_dimensions = [
-            {"Name": "LoadBalancerName", "Value": "test-lb"},
-            {"Name": "AvailabilityZone", "Value": "us-east-1a"},
+        expected_metric_data_queries = [
+            {
+                "Id": "m1",
+                "MetricStat": {
+                    "Metric": {
+                        "Namespace": "AWS/ELB",
+                        "MetricName": "RequestCount",
+                        "Dimensions": [
+                            {"Name": "LoadBalancerName", "Value": "test-lb"},
+                            {"Name": "AvailabilityZone", "Value": "us-east-1a"},
+                        ]
+                    },
+                    "Period": 300,
+                    "Stat": "Sum",  # First statistic from the list
+                    "Unit": "Count",
+                },
+                "ReturnData": True,
+            }
         ]
 
         mock_cw_client.get_metric_data.assert_called_once_with(
-            Namespace="AWS/ELB",
-            MetricName="RequestCount",
-            Dimensions=expected_dimensions,
+            MetricDataQueries=expected_metric_data_queries,
             StartTime=start_time,
             EndTime=end_time,
-            Period=300,
-            Statistics=["Sum", "Average"],
-            Unit="Count",
         )
 
-        self.assertEqual(result, mock_cloudwatch_metric_response["Datapoints"])
+        expected_datapoints = [
+            {"Timestamp": "2023-10-01T12:00:00.000Z", "Sum": 5.0, "Unit": "Count"},
+            {"Timestamp": "2023-10-01T12:10:00.000Z", "Sum": 3.0, "Unit": "Count"},
+            {"Timestamp": "2023-10-01T12:20:00.000Z", "Sum": 0.0, "Unit": "Count"},
+        ]
+        self.assertEqual(result, expected_datapoints)
