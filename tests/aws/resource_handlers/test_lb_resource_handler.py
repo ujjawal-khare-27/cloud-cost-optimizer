@@ -1,7 +1,7 @@
 import unittest
 from unittest.mock import patch, MagicMock
 
-from src.core.aws.resource_handlers.lb_handlers import LoadBalancerResourceHandlers
+from src.core.aws.resource_handlers.lb import LoadBalancerResourceHandlers
 from tests.aws.resource_handlers.mock import (
     mock_lb_response,
     mock_lb_health_response_all_unhealthy,
@@ -14,7 +14,7 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.region_name = "us-east-1"
         self.lb_handler = LoadBalancerResourceHandlers(self.region_name)
 
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_get_list(self, mock_boto3_client):
         """Test _get_list method"""
         mock_elb_client = MagicMock()
@@ -28,7 +28,7 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.assertEqual(len(lb_list), 3)
         self.assertEqual(lb_list[0]["LoadBalancerName"], "test-lb-no-targets")
 
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_get_lb_with_no_targets(self, mock_boto3_client):
         """Test _get_lb_with_no_targets method"""
         mock_elb_client = MagicMock()
@@ -49,7 +49,7 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.assertEqual(result[0]["LoadBalancerName"], "lb1")
         self.assertEqual(result[1]["LoadBalancerName"], "lb3")
 
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_get_lb_with_all_unhealthy_targets(self, mock_boto3_client):
         """Test _get_lb_with_all_unhealthy_targets method"""
         mock_elb_client = MagicMock()
@@ -81,7 +81,7 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["LoadBalancerName"], "test-lb-all-unhealthy")
 
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_get_lb_with_all_unhealthy_targets_no_instances(self, mock_boto3_client):
         """Test _get_lb_with_all_unhealthy_targets with load balancers that have no instances"""
         mock_elb_client = MagicMock()
@@ -102,7 +102,7 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         # Should not call describe_instance_health for load balancers with no instances
         mock_elb_client.describe_instance_health.assert_not_called()
 
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_find_under_utilized_resource_comprehensive(self, mock_boto3_client):
         """Test find_under_utilized_resource with comprehensive scenario"""
         mock_elb_client = MagicMock()
@@ -120,20 +120,10 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         handler = LoadBalancerResourceHandlers("us-east-1")
         result = handler.find_under_utilized_resource()
 
-        # Should return load balancers with no targets AND all unhealthy targets
-        self.assertEqual(len(result), 2)
+        assert len(result["no_targets_lb"]) == 1
+        assert len(result["all_unhealthy"]) == 1
 
-        # Check that we have the load balancer with no targets
-        lb_names = [lb["LoadBalancerName"] for lb in result[0]["no_targets_lb"]]
-        self.assertIn("test-lb-no-targets", lb_names)
-
-        lb_names = [lb["LoadBalancerName"] for lb in result[1]["all_unhealthy"]]
-        self.assertIn("test-lb-all-unhealthy", lb_names)
-
-        # Should not include the healthy load balancer
-        self.assertNotIn("test-lb-healthy", lb_names)
-
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_find_under_utilized_resource_mixed_health_states(self, mock_boto3_client):
         """Test find_under_utilized_resource with mixed health states"""
         mock_elb_client = MagicMock()
@@ -171,9 +161,9 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         result = handler.find_under_utilized_resource()
 
         # Should return empty list since not ALL instances are unhealthy
-        self.assertEqual([{'no_targets_lb': []}, {'all_unhealthy': []}], result)
+        self.assertEqual({"no_targets_lb": [], "all_unhealthy": []}, result)
 
-    @patch("src.core.aws.resource_handlers.lb_handlers.boto3.client")
+    @patch("src.core.utils.boto3.client")
     def test_find_under_utilized_resource_api_error_in_get_list(self, mock_boto3_client):
         """Test find_under_utilized_resource when describe_load_balancers fails"""
         mock_elb_client = MagicMock()

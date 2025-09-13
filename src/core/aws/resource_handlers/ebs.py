@@ -1,16 +1,16 @@
 from dataclasses import dataclass
-from typing import Dict, List
+from typing import Dict
 
-import boto3
 from src.core.aws.resource_handlers.resource_handler import ResourceHandler
+from src.core.utils import get_boto3_client
 
 
 @dataclass
 class EbsResourceHandlers(ResourceHandler):
     def __init__(self, region_name: str):
-        self._boto3 = boto3.client("ec2", region_name=region_name)
+        self._boto3 = get_boto3_client("ec2", region_name)
 
-    def find_under_utilized_resource(self) -> List[Dict]:
+    def find_under_utilized_resource(self) -> Dict:
         volumes = self._boto3.describe_volumes(Filters=[{"Name": "status", "Values": ["available"]}]).get("Volumes", [])
 
         unused_vols = []
@@ -25,4 +25,4 @@ class EbsResourceHandlers(ResourceHandler):
                 }
             )
 
-        return unused_vols
+        return {"unused_ebs_volumes": unused_vols}

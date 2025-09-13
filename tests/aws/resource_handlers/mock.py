@@ -217,3 +217,110 @@ mock_lb_health_response_healthy = {
         "RetryAttempts": 0,
     },
 }
+
+# CloudWatch mock data
+mock_cloudwatch_metric_response = {
+    "Datapoints": [
+        {"Timestamp": "2023-10-01T12:00:00.000Z", "Maximum": 5.0, "Unit": "Count"},
+        {"Timestamp": "2023-10-01T12:10:00.000Z", "Maximum": 3.0, "Unit": "Count"},
+        {"Timestamp": "2023-10-01T12:20:00.000Z", "Maximum": 0.0, "Unit": "Count"},
+    ],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+mock_cloudwatch_empty_response = {
+    "Datapoints": [],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+# RDS mock data
+mock_rds_instances_response = {
+    "DBInstances": [
+        {
+            "DBInstanceIdentifier": "test-db-instance-1",
+            "DBInstanceClass": "db.t3.micro",
+            "Engine": "mysql",
+            "DBInstanceStatus": "available",
+            "MasterUsername": "admin",
+            "DBName": "testdb",
+            "AllocatedStorage": 20,
+            "InstanceCreateTime": "2023-10-01T12:34:56.000Z",
+            "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:test-db-instance-1",
+            "VpcSecurityGroups": [{"VpcSecurityGroupId": "sg-12345678", "Status": "active"}],
+            "DBSubnetGroup": {
+                "DBSubnetGroupName": "default",
+                "DBSubnetGroupDescription": "default",
+                "VpcId": "vpc-12345678",
+                "SubnetGroupStatus": "Complete",
+            },
+            "DBParameterGroups": [{"DBParameterGroupName": "default.mysql8.0", "ParameterApplyStatus": "in-sync"}],
+            "AvailabilityZone": "us-east-1a",
+            "DBInstancePort": 3306,
+            "StorageType": "gp2",
+            "StorageEncrypted": False,
+            "DBClusterIdentifier": "test-cluster-1",
+        },
+        {
+            "DBInstanceIdentifier": "test-db-instance-2",
+            "DBInstanceClass": "db.t3.small",
+            "Engine": "postgres",
+            "DBInstanceStatus": "available",
+            "MasterUsername": "admin",
+            "DBName": "testdb2",
+            "AllocatedStorage": 50,
+            "InstanceCreateTime": "2023-11-15T08:22:10.000Z",
+            "DBInstanceArn": "arn:aws:rds:us-east-1:123456789012:db:test-db-instance-2",
+            "VpcSecurityGroups": [{"VpcSecurityGroupId": "sg-87654321", "Status": "active"}],
+            "DBSubnetGroup": {
+                "DBSubnetGroupName": "default",
+                "DBSubnetGroupDescription": "default",
+                "VpcId": "vpc-87654321",
+                "SubnetGroupStatus": "Complete",
+            },
+            "DBParameterGroups": [{"DBParameterGroupName": "default.postgres13", "ParameterApplyStatus": "in-sync"}],
+            "AvailabilityZone": "us-east-1b",
+            "DBInstancePort": 5432,
+            "StorageType": "gp3",
+            "StorageEncrypted": True,
+            "DBClusterIdentifier": "test-cluster-2",
+        },
+    ],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+mock_rds_empty_response = {
+    "DBInstances": [],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}

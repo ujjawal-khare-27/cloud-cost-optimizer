@@ -1,1 +1,1 @@
-CONFIG_MAP = {"test": {"services": ["ebs", "lb"]}, "prod": {"services": ["ebs", "lb"]}}
+CONFIG_MAP = {"test": {"services": ["ebs", "lb", "rds"]}, "prod": {"services": ["ebs", "lb", "rds"]}}
