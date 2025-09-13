@@ -220,10 +220,18 @@ mock_lb_health_response_healthy = {
 
 # CloudWatch mock data
 mock_cloudwatch_metric_response = {
-    "Datapoints": [
-        {"Timestamp": "2023-10-01T12:00:00.000Z", "Maximum": 5.0, "Unit": "Count"},
-        {"Timestamp": "2023-10-01T12:10:00.000Z", "Maximum": 3.0, "Unit": "Count"},
-        {"Timestamp": "2023-10-01T12:20:00.000Z", "Maximum": 0.0, "Unit": "Count"},
+    "MetricDataResults": [
+        {
+            "Id": "m1",
+            "Label": "DatabaseConnections",
+            "Timestamps": [
+                "2023-10-01T12:00:00.000Z",
+                "2023-10-01T12:10:00.000Z", 
+                "2023-10-01T12:20:00.000Z"
+            ],
+            "Values": [5.0, 3.0, 0.0],
+            "StatusCode": "Complete",
+        }
     ],
     "ResponseMetadata": {
         "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
@@ -237,7 +245,59 @@ mock_cloudwatch_metric_response = {
 }
 
 mock_cloudwatch_empty_response = {
-    "Datapoints": [],
+    "MetricDataResults": [],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+# Mock response for RDS with no connections (all values are 0.0)
+mock_cloudwatch_no_connections_response = {
+    "MetricDataResults": [
+        {
+            "Id": "m1",
+            "Label": "DatabaseConnections",
+            "Timestamps": [
+                "2023-10-01T12:00:00.000Z",
+                "2023-10-01T12:10:00.000Z", 
+                "2023-10-01T12:20:00.000Z"
+            ],
+            "Values": [0.0, 0.0, 0.0],
+            "StatusCode": "Complete",
+        }
+    ],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+# Mock response for RDS with some connections (mixed values)
+mock_cloudwatch_some_connections_response = {
+    "MetricDataResults": [
+        {
+            "Id": "m1",
+            "Label": "DatabaseConnections",
+            "Timestamps": [
+                "2023-10-01T12:00:00.000Z",
+                "2023-10-01T12:10:00.000Z", 
+                "2023-10-01T12:20:00.000Z"
+            ],
+            "Values": [3.0, 2.0, 1.0],
+            "StatusCode": "Complete",
+        }
+    ],
     "ResponseMetadata": {
         "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
         "HTTPStatusCode": 200,

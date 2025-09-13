@@ -1,14 +1,14 @@
 import unittest
 from unittest.mock import patch, MagicMock
-from datetime import datetime, timedelta
 
 from src.core.aws.resource_handlers.rds import RdsHandler
-from src.models.cloudwatch import CloudWatchMetric
 from tests.aws.resource_handlers.mock import (
     mock_rds_instances_response,
     mock_rds_empty_response,
     mock_cloudwatch_metric_response,
     mock_cloudwatch_empty_response,
+    mock_cloudwatch_no_connections_response,
+    mock_cloudwatch_some_connections_response,
 )
 
 
@@ -76,9 +76,16 @@ class TestRdsResourceHandler(unittest.TestCase):
         mock_cw_client.get_metric_data.assert_called_once()
         call_args = mock_cw_client.get_metric_data.call_args
 
-        # Check the metric parameters
-        self.assertEqual(call_args[1]["Namespace"], "AWS/RDS")
-        self.assertEqual(call_args[1]["Dimensions"], [{"Name": "DBInstanceIdentifier", "Value": "test-db-instance-1"}])
+        # Check the metric parameters - should use MetricDataQueries structure
+        self.assertIn("MetricDataQueries", call_args[1])
+        metric_data_queries = call_args[1]["MetricDataQueries"]
+        self.assertEqual(len(metric_data_queries), 1)
+        
+        metric_query = metric_data_queries[0]
+        self.assertEqual(metric_query["Id"], "m1")
+        self.assertEqual(metric_query["MetricStat"]["Metric"]["Namespace"], "AWS/RDS")
+        self.assertEqual(metric_query["MetricStat"]["Metric"]["MetricName"], "DatabaseConnections")
+        self.assertEqual(metric_query["MetricStat"]["Metric"]["Dimensions"], [{"Name": "DBInstanceIdentifier", "Value": "test-db-instance-1"}])
 
         # Should return the maximum value from the datapoints
         self.assertEqual(result, 5.0)  # Maximum value from mock_cloudwatch_metric_response
@@ -112,10 +119,16 @@ class TestRdsResourceHandler(unittest.TestCase):
         mock_cw_client.get_metric_data.assert_called_once()
         call_args = mock_cw_client.get_metric_data.call_args
 
-        # Check the metric parameters
-        self.assertEqual(call_args[1]["Namespace"], "AWS/RDS")
-        self.assertEqual(call_args[1]["MetricName"], "DatabaseConnections")
-        self.assertEqual(call_args[1]["Dimensions"], [{"Name": "DBClusterIdentifier", "Value": "test-cluster-1"}])
+        # Check the metric parameters - should use MetricDataQueries structure
+        self.assertIn("MetricDataQueries", call_args[1])
+        metric_data_queries = call_args[1]["MetricDataQueries"]
+        self.assertEqual(len(metric_data_queries), 1)
+        
+        metric_query = metric_data_queries[0]
+        self.assertEqual(metric_query["Id"], "m1")
+        self.assertEqual(metric_query["MetricStat"]["Metric"]["Namespace"], "AWS/RDS")
+        self.assertEqual(metric_query["MetricStat"]["Metric"]["MetricName"], "DatabaseConnections")
+        self.assertEqual(metric_query["MetricStat"]["Metric"]["Dimensions"], [{"Name": "DBClusterIdentifier", "Value": "test-cluster-1"}])
 
         # Should return the maximum value from the datapoints
         self.assertEqual(result, 5.0)
@@ -129,8 +142,8 @@ class TestRdsResourceHandler(unittest.TestCase):
 
         # Mock CloudWatch responses - first cluster has connections, second doesn't
         mock_cw_client.get_metric_data.side_effect = [
-            {"Datapoints": [{"Maximum": 5.0}]},  # First cluster has connections
-            {"Datapoints": [{"Maximum": 0.0}]},  # Second cluster has no connections
+            mock_cloudwatch_metric_response,  # First cluster has connections
+            mock_cloudwatch_no_connections_response,  # Second cluster has no connections
         ]
 
         rds_handler = RdsHandler("us-east-1")
@@ -155,8 +168,8 @@ class TestRdsResourceHandler(unittest.TestCase):
 
         # Mock CloudWatch responses - first instance has connections, second doesn't
         mock_cw_client.get_metric_data.side_effect = [
-            {"Datapoints": [{"Maximum": 3.0}]},  # First instance has connections
-            {"Datapoints": [{"Maximum": 0.0}]},  # Second instance has no connections
+            mock_cloudwatch_some_connections_response,  # First instance has connections
+            mock_cloudwatch_no_connections_response,  # Second instance has no connections
         ]
 
         rds_handler = RdsHandler("us-east-1")
@@ -184,10 +197,10 @@ class TestRdsResourceHandler(unittest.TestCase):
 
         # Mock CloudWatch responses for cluster connections
         mock_cw_client.get_metric_data.side_effect = [
-            {"Datapoints": [{"Maximum": 0.0}]},  # cluster1 has no connections
-            {"Datapoints": [{"Maximum": 5.0}]},  # cluster2 has connections
-            {"Datapoints": [{"Maximum": 0.0}]},  # cluster1 has no connections (duplicate call)
-            {"Datapoints": [{"Maximum": 5.0}]},  # cluster2 has connections (duplicate call)
+            mock_cloudwatch_no_connections_response,  # cluster1 has no connections
+            mock_cloudwatch_some_connections_response,  # cluster2 has connections
+            mock_cloudwatch_no_connections_response,  # cluster1 has no connections (duplicate call)
+            mock_cloudwatch_some_connections_response,  # cluster2 has connections (duplicate call)
         ]
 
         rds_handler = RdsHandler("us-east-1")
@@ -213,10 +226,10 @@ class TestRdsResourceHandler(unittest.TestCase):
 
         # Mock CloudWatch responses - all clusters have connections
         mock_cw_client.get_metric_data.side_effect = [
-            {"Datapoints": [{"Maximum": 5.0}]},  # cluster1 has connections
-            {"Datapoints": [{"Maximum": 3.0}]},  # cluster2 has connections
-            {"Datapoints": [{"Maximum": 5.0}]},  # cluster1 has connections (duplicate call)
-            {"Datapoints": [{"Maximum": 3.0}]},  # cluster2 has connections (duplicate call)
+            mock_cloudwatch_some_connections_response,  # cluster1 has connections
+            mock_cloudwatch_metric_response,  # cluster2 has connections
+            mock_cloudwatch_some_connections_response,  # cluster1 has connections (duplicate call)
+            mock_cloudwatch_metric_response,  # cluster2 has connections (duplicate call)
         ]
 
         rds_handler = RdsHandler("us-east-1")
