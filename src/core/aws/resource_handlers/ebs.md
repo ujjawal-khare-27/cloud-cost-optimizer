@@ -1,6 +1,7 @@
-Strategy for EbsResourceHandlers class is as follows:
+## 📦 Strategy for `EbsResourceHandlers` Class  
 
-1. Get all EBS volumes using describe_volumes API.
-2. Filter out volumes that are not in use.
-3. Return the list of unused volumes.
+The strategy for identifying underutilized **EBS volumes** is as follows:  
 
+1. Retrieve all EBS volumes using the **`describe_volumes`** API.  
+2. Filter out volumes that are **not in use**.  
+3. Return the final list of **unused volumes**.  
