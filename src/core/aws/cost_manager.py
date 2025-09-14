@@ -1,4 +1,5 @@
 import os
+import asyncio
 from dataclasses import dataclass
 from typing import List
 
@@ -22,7 +23,7 @@ class AwsCostManager:
             "rds": RdsHandler(self._region),
         }
 
-    def get_unused_resources(self, services: List[str] = []):
+    async def get_unused_resources(self, services: List[str] = []):
         unused_resources = []
 
         if len(services) != 0:
@@ -31,11 +32,17 @@ class AwsCostManager:
             services = self._supported_services
 
         for service in services:
-            unused_resources.append({service: self._resource_strategy[service].find_under_utilized_resource()})
+            result = await self._resource_strategy[service].find_under_utilized_resource()
+            unused_resources.append({service: result})
 
         return unused_resources
 
 
 if __name__ == "__main__":
-    cost_manager = AwsCostManager(os.getenv("AWS_REGION"))
-    print(cost_manager.get_unused_resources())
+
+    async def main():
+        cost_manager = AwsCostManager(os.getenv("AWS_REGION"))
+        result = await cost_manager.get_unused_resources()
+        print(result)
+
+    asyncio.run(main())

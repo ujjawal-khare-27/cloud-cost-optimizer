@@ -4,5 +4,5 @@ from typing import Dict, List
 
 class ResourceHandler(ABC):
 
-    def find_under_utilized_resource(self) -> List[Dict]:
+    async def find_under_utilized_resource(self) -> List[Dict]:
         pass

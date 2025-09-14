@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock
+import asyncio
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from src.core.aws.resource_handlers.lb import LoadBalancerResourceHandlers
 from tests.aws.resource_handlers.mock import (
@@ -14,26 +15,22 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.region_name = "us-east-1"
         self.lb_handler = LoadBalancerResourceHandlers(self.region_name)
 
-    @patch("src.core.utils.boto3.client")
-    def test_get_list(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_get_list(self, mock_get_client):
         """Test _get_list method"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
         mock_elb_client.describe_load_balancers.return_value = mock_lb_response
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         handler = LoadBalancerResourceHandlers("us-east-1")
-        lb_list = handler._get_list()
+        lb_list = await handler._get_list()
 
         mock_elb_client.describe_load_balancers.assert_called_once()
         self.assertEqual(len(lb_list), 3)
         self.assertEqual(lb_list[0]["LoadBalancerName"], "test-lb-no-targets")
 
-    @patch("src.core.utils.boto3.client")
-    def test_get_lb_with_no_targets(self, mock_boto3_client):
+    def test_get_lb_with_no_targets(self):
         """Test _get_lb_with_no_targets method"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
-
         handler = LoadBalancerResourceHandlers("us-east-1")
 
         # Test with load balancers that have no instances
@@ -49,11 +46,11 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         self.assertEqual(result[0]["LoadBalancerName"], "lb1")
         self.assertEqual(result[1]["LoadBalancerName"], "lb3")
 
-    @patch("src.core.utils.boto3.client")
-    def test_get_lb_with_all_unhealthy_targets(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_get_lb_with_all_unhealthy_targets(self, mock_get_client):
         """Test _get_lb_with_all_unhealthy_targets method"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         # Mock health check responses
         mock_elb_client.describe_instance_health.side_effect = [
@@ -75,17 +72,17 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
             },
         ]
 
-        result = handler._get_lb_with_all_unhealthy_targets(lb_list)
+        result = await handler._get_lb_with_all_unhealthy_targets(lb_list)
 
         # Should only return the load balancer with all unhealthy targets
         self.assertEqual(len(result), 1)
         self.assertEqual(result[0]["LoadBalancerName"], "test-lb-all-unhealthy")
 
-    @patch("src.core.utils.boto3.client")
-    def test_get_lb_with_all_unhealthy_targets_no_instances(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_get_lb_with_all_unhealthy_targets_no_instances(self, mock_get_client):
         """Test _get_lb_with_all_unhealthy_targets with load balancers that have no instances"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         handler = LoadBalancerResourceHandlers("us-east-1")
 
@@ -95,18 +92,18 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
             {"LoadBalancerName": "lb2", "Instances": []},
         ]
 
-        result = handler._get_lb_with_all_unhealthy_targets(lb_list)
+        result = await handler._get_lb_with_all_unhealthy_targets(lb_list)
 
         # Should return empty list since no instances means no health checks
         self.assertEqual(len(result), 0)
         # Should not call describe_instance_health for load balancers with no instances
         mock_elb_client.describe_instance_health.assert_not_called()
 
-    @patch("src.core.utils.boto3.client")
-    def test_find_under_utilized_resource_comprehensive(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_find_under_utilized_resource_comprehensive(self, mock_get_client):
         """Test find_under_utilized_resource with comprehensive scenario"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         # Mock describe_load_balancers response
         mock_elb_client.describe_load_balancers.return_value = mock_lb_response
@@ -118,16 +115,16 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         ]
 
         handler = LoadBalancerResourceHandlers("us-east-1")
-        result = handler.find_under_utilized_resource()
+        result = await handler.find_under_utilized_resource()
 
         assert len(result["no_targets_lb"]) == 1
         assert len(result["all_unhealthy"]) == 1
 
-    @patch("src.core.utils.boto3.client")
-    def test_find_under_utilized_resource_mixed_health_states(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_find_under_utilized_resource_mixed_health_states(self, mock_get_client):
         """Test find_under_utilized_resource with mixed health states"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         # Mock response with mixed health states
         mixed_health_response = {
@@ -158,16 +155,16 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
         mock_elb_client.describe_instance_health.return_value = mixed_health_response
 
         handler = LoadBalancerResourceHandlers("us-east-1")
-        result = handler.find_under_utilized_resource()
+        result = await handler.find_under_utilized_resource()
 
         # Should return empty list since not ALL instances are unhealthy
         self.assertEqual({"no_targets_lb": [], "all_unhealthy": []}, result)
 
-    @patch("src.core.utils.boto3.client")
-    def test_find_under_utilized_resource_api_error_in_get_list(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_find_under_utilized_resource_api_error_in_get_list(self, mock_get_client):
         """Test find_under_utilized_resource when describe_load_balancers fails"""
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         # Mock API error
         mock_elb_client.describe_load_balancers.side_effect = Exception("API Error")
@@ -176,6 +173,6 @@ class TestLoadBalancerResourceHandlers(unittest.TestCase):
 
         # Should raise the exception
         with self.assertRaises(Exception) as context:
-            handler.find_under_utilized_resource()
+            await handler.find_under_utilized_resource()
 
         self.assertEqual("API Error", str(context.exception))
