@@ -51,10 +51,8 @@ class AwsCostManager:
         Returns:
             Path to the generated Excel report file.
         """
-        # Get unused resources data
         unused_resources = await self.get_unused_resources(services)
 
-        # Generate Excel report
         report_generator = ExcelReportGenerator()
         report_path = report_generator.generate_report(
             unused_resources=unused_resources, region=self._region, output_path=output_path
