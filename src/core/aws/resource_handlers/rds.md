@@ -1,6 +1,8 @@
-Strategy for RdsResourceHandlers class is as follows:
+## 🗄️ Strategy for `RdsResourceHandlers` Class  
 
-1. Get all RDS instances using describe_db_instances API.
-2. Filter out clusters that have no connections.
-3. Filter out instances that have no connections.
-4. Return the list of unused RDS instances.
+The strategy for identifying **unused RDS instances** is as follows:  
+
+1. Retrieve all RDS instances using the **`describe_db_instances`** API.  
+2. Filter out **clusters with no connections**.  
+3. Filter out **instances with no connections**.  
+4. Return the final list of **unused RDS instances**.  

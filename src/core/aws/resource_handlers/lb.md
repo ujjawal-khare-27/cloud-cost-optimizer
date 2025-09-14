@@ -1,6 +1,8 @@
-Strategy for LbResourceHandlers class is as follows:
+## 🌐 Strategy for `LbResourceHandlers` Class  
 
-1. Get all load balancers using describe_load_balancers API.
-2. Filter out load balancers that have no instances in them.
-3. Filter out load balancers that have all instances in OutOfService/unhealthy state.
-3. Return the list of unused load balancers.
+The strategy for identifying **unused Load Balancers** is as follows:  
+
+1. Retrieve all load balancers using the **`describe_load_balancers`** API.  
+2. Filter out load balancers that have **no instances** associated with them.  
+3. Filter out load balancers where **all instances are in `OutOfService` or unhealthy state**.  
+4. Return the final list of **unused load balancers**.  
