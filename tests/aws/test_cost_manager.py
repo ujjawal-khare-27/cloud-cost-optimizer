@@ -1,5 +1,6 @@
 import unittest
-from unittest.mock import patch, MagicMock
+import asyncio
+from unittest.mock import patch, MagicMock, AsyncMock
 
 from src.core.aws.cost_manager import AwsCostManager
 from tests.aws.resource_handlers.mock import (
@@ -17,18 +18,16 @@ class TestAwsCostManager(unittest.TestCase):
     def setUp(self):
         self._aws_cost_manager = AwsCostManager("us-east-1")
 
-    @patch("src.core.utils.boto3.client")
-    def test_aws_cost_manager_ebs(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_aws_cost_manager_ebs(self, mock_get_client):
         # Create a mock EC2 client
-        mock_ec2_client = MagicMock()
-        mock_boto3_client.return_value = mock_ec2_client
-
-        # Mock the describe_volumes response
+        mock_ec2_client = AsyncMock()
         mock_ec2_client.describe_volumes.return_value = mock_volume_response
+        mock_get_client.return_value.__aenter__.return_value = mock_ec2_client
 
         # Create a new AwsCostManager instance after mocking boto3
         aws_cost_manager = AwsCostManager("us-east-1")
-        unused_resources = aws_cost_manager.get_unused_resources(["ebs"])
+        unused_resources = await aws_cost_manager.get_unused_resources(["ebs"])
 
         # Expected format based on the actual EbsResourceHandlers implementation
         expected_unused_resources = {
@@ -54,11 +53,11 @@ class TestAwsCostManager(unittest.TestCase):
 
         assert expected_unused_resources == unused_resources[0].get("ebs")
 
-    @patch("src.core.utils.boto3.client")
-    def test_aws_cost_manager_lb(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_aws_cost_manager_lb(self, mock_get_client):
         # Create a mock ELB client
-        mock_elb_client = MagicMock()
-        mock_boto3_client.return_value = mock_elb_client
+        mock_elb_client = AsyncMock()
+        mock_get_client.return_value.__aenter__.return_value = mock_elb_client
 
         # Mock the describe_load_balancers response
         mock_elb_client.describe_load_balancers.return_value = mock_lb_response
@@ -71,7 +70,7 @@ class TestAwsCostManager(unittest.TestCase):
 
         # Create a new AwsCostManager instance after mocking boto3
         aws_cost_manager = AwsCostManager("us-east-1")
-        unused_resources = aws_cost_manager.get_unused_resources(["lb"])
+        unused_resources = await aws_cost_manager.get_unused_resources(["lb"])
 
         # Verify the result structure
         self.assertEqual(len(unused_resources), 1)
@@ -93,28 +92,26 @@ class TestAwsCostManager(unittest.TestCase):
         mock_elb_client.describe_load_balancers.assert_called_once()
         mock_elb_client.describe_instance_health.assert_called()
 
-    @patch("src.core.utils.boto3.client")
-    def test_aws_cost_manager_rds(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    @patch("src.core.aws.resource_handlers.cloudwatch.CloudWatch.get_metrics")
+    async def test_aws_cost_manager_rds(self, mock_get_metrics, mock_get_client):
         """Test AwsCostManager with RDS service"""
-        # Create mock clients for RDS and CloudWatch
-        mock_rds_client = MagicMock()
-        mock_cw_client = MagicMock()
-        mock_boto3_client.side_effect = [mock_rds_client, mock_cw_client, mock_rds_client, mock_cw_client]
-
-        # Mock the describe_db_instances response
+        # Create mock clients for RDS
+        mock_rds_client = AsyncMock()
         mock_rds_client.describe_db_instances.return_value = mock_rds_instances_response
+        mock_get_client.return_value.__aenter__.return_value = mock_rds_client
 
         # Mock CloudWatch responses - first cluster has no connections, second has connections
-        mock_cw_client.get_metric_data.side_effect = [
-            mock_cloudwatch_empty_response,  # cluster1 has no connections
-            mock_cloudwatch_metric_response,  # cluster2 has connections
-            mock_cloudwatch_empty_response,  # cluster1 has no connections (duplicate call)
-            mock_cloudwatch_metric_response,  # cluster2 has connections (duplicate call)
+        mock_get_metrics.side_effect = [
+            [],  # cluster1 has no connections
+            [{"Maximum": 5.0}],  # cluster2 has connections
+            [],  # cluster1 has no connections (duplicate call)
+            [{"Maximum": 5.0}],  # cluster2 has connections (duplicate call)
         ]
 
         # Create a new AwsCostManager instance after mocking boto3
         aws_cost_manager = AwsCostManager("us-east-1")
-        unused_resources = aws_cost_manager.get_unused_resources(["rds"])
+        unused_resources = await aws_cost_manager.get_unused_resources(["rds"])
 
         mock_rds_client.describe_db_instances.assert_called_once()
 
@@ -134,28 +131,26 @@ class TestAwsCostManager(unittest.TestCase):
             rds_result["rds_instances_with_no_connections"][0]["DBInstanceIdentifier"], "test-db-instance-1"
         )
 
-    @patch("src.core.utils.boto3.client")
-    def test_aws_cost_manager_rds_no_underutilized(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    @patch("src.core.aws.resource_handlers.cloudwatch.CloudWatch.get_metrics")
+    async def test_aws_cost_manager_rds_no_underutilized(self, mock_get_metrics, mock_get_client):
         """Test AwsCostManager with RDS service when no resources are underutilized"""
-        # Create mock clients for RDS and CloudWatch
-        mock_rds_client = MagicMock()
-        mock_cw_client = MagicMock()
-        mock_boto3_client.side_effect = [mock_rds_client, mock_cw_client, mock_rds_client, mock_cw_client]
-
-        # Mock the describe_db_instances response
+        # Create mock clients for RDS
+        mock_rds_client = AsyncMock()
         mock_rds_client.describe_db_instances.return_value = mock_rds_instances_response
+        mock_get_client.return_value.__aenter__.return_value = mock_rds_client
 
         # Mock CloudWatch responses - all clusters have connections
-        mock_cw_client.get_metric_data.side_effect = [
-            mock_cloudwatch_metric_response,  # cluster1 has connections
-            mock_cloudwatch_metric_response,  # cluster2 has connections
-            mock_cloudwatch_metric_response,  # cluster1 has connections (duplicate call)
-            mock_cloudwatch_metric_response,  # cluster2 has connections (duplicate call)
+        mock_get_metrics.side_effect = [
+            [{"Maximum": 5.0}],  # cluster1 has connections
+            [{"Maximum": 5.0}],  # cluster2 has connections
+            [{"Maximum": 5.0}],  # cluster1 has connections (duplicate call)
+            [{"Maximum": 5.0}],  # cluster2 has connections (duplicate call)
         ]
 
         # Create a new AwsCostManager instance after mocking boto3
         aws_cost_manager = AwsCostManager("us-east-1")
-        unused_resources = aws_cost_manager.get_unused_resources(["rds"])
+        unused_resources = await aws_cost_manager.get_unused_resources(["rds"])
 
         # Verify the result structure
         self.assertEqual(len(unused_resources), 1)
@@ -169,37 +164,47 @@ class TestAwsCostManager(unittest.TestCase):
         self.assertEqual(len(rds_result["rds_with_no_connections"]), 0)
         self.assertEqual(len(rds_result["rds_instances_with_no_connections"]), 0)
 
-    @patch("src.core.utils.boto3.client")
-    def test_aws_cost_manager_multiple_services(self, mock_boto3_client):
+    @patch("src.core.utils.AsyncClientManager")
+    @patch("src.core.aws.resource_handlers.cloudwatch.CloudWatch.get_metrics")
+    async def test_aws_cost_manager_multiple_services(self, mock_get_metrics, mock_get_client):
         """Test AwsCostManager with multiple services including RDS"""
         # Create mock clients
-        mock_ec2_client = MagicMock()
-        mock_elb_client = MagicMock()
-        mock_rds_client = MagicMock()
-        mock_cw_client = MagicMock()
-        mock_boto3_client.side_effect = [
-            mock_ec2_client,
-            mock_elb_client,
-            mock_rds_client,
-            mock_cw_client,
-            mock_rds_client,
-            mock_cw_client,
-        ]
+        mock_ec2_client = AsyncMock()
+        mock_elb_client = AsyncMock()
+        mock_rds_client = AsyncMock()
 
         # Mock responses
         mock_ec2_client.describe_volumes.return_value = mock_volume_response
         mock_elb_client.describe_load_balancers.return_value = mock_lb_response
-        mock_rds_client.describe_db_instances.return_value = mock_rds_instances_response
-        mock_cw_client.get_metric_data.side_effect = [
-            mock_cloudwatch_empty_response,  # cluster1 has no connections
-            mock_cloudwatch_metric_response,  # cluster2 has connections
-            mock_cloudwatch_empty_response,  # cluster1 has no connections (duplicate call)
-            mock_cloudwatch_metric_response,  # cluster2 has connections (duplicate call)
+        mock_elb_client.describe_instance_health.side_effect = [
+            mock_lb_health_response_all_unhealthy,
+            mock_lb_health_response_healthy,
         ]
+        mock_rds_client.describe_db_instances.return_value = mock_rds_instances_response
+
+        # Mock CloudWatch responses
+        mock_get_metrics.side_effect = [
+            [],  # cluster1 has no connections
+            [{"Maximum": 5.0}],  # cluster2 has connections
+            [],  # cluster1 has no connections (duplicate call)
+            [{"Maximum": 5.0}],  # cluster2 has connections (duplicate call)
+        ]
+
+        # Mock the get_client to return different clients based on service
+        def mock_client_factory(service_name, region_name):
+            if service_name == "ec2":
+                return mock_ec2_client
+            elif service_name == "elb":
+                return mock_elb_client
+            elif service_name == "rds":
+                return mock_rds_client
+            return AsyncMock()
+
+        mock_get_client.side_effect = mock_client_factory
 
         # Create a new AwsCostManager instance after mocking boto3
         aws_cost_manager = AwsCostManager("us-east-1")
-        unused_resources = aws_cost_manager.get_unused_resources(["ebs", "lb", "rds"])
+        unused_resources = await aws_cost_manager.get_unused_resources(["ebs", "lb", "rds"])
 
         # Verify we get results for all three services
         self.assertEqual(len(unused_resources), 3)

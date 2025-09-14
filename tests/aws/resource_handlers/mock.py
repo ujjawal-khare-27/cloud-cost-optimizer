@@ -224,11 +224,7 @@ mock_cloudwatch_metric_response = {
         {
             "Id": "m1",
             "Label": "DatabaseConnections",
-            "Timestamps": [
-                "2023-10-01T12:00:00.000Z",
-                "2023-10-01T12:10:00.000Z", 
-                "2023-10-01T12:20:00.000Z"
-            ],
+            "Timestamps": ["2023-10-01T12:00:00.000Z", "2023-10-01T12:10:00.000Z", "2023-10-01T12:20:00.000Z"],
             "Values": [5.0, 3.0, 0.0],
             "StatusCode": "Complete",
         }
@@ -263,11 +259,7 @@ mock_cloudwatch_no_connections_response = {
         {
             "Id": "m1",
             "Label": "DatabaseConnections",
-            "Timestamps": [
-                "2023-10-01T12:00:00.000Z",
-                "2023-10-01T12:10:00.000Z", 
-                "2023-10-01T12:20:00.000Z"
-            ],
+            "Timestamps": ["2023-10-01T12:00:00.000Z", "2023-10-01T12:10:00.000Z", "2023-10-01T12:20:00.000Z"],
             "Values": [0.0, 0.0, 0.0],
             "StatusCode": "Complete",
         }
@@ -289,11 +281,7 @@ mock_cloudwatch_some_connections_response = {
         {
             "Id": "m1",
             "Label": "DatabaseConnections",
-            "Timestamps": [
-                "2023-10-01T12:00:00.000Z",
-                "2023-10-01T12:10:00.000Z", 
-                "2023-10-01T12:20:00.000Z"
-            ],
+            "Timestamps": ["2023-10-01T12:00:00.000Z", "2023-10-01T12:10:00.000Z", "2023-10-01T12:20:00.000Z"],
             "Values": [3.0, 2.0, 1.0],
             "StatusCode": "Complete",
         }

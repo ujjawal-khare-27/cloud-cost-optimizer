@@ -2,16 +2,20 @@ from dataclasses import dataclass
 from typing import Dict
 
 from src.core.aws.resource_handlers.resource_handler import ResourceHandler
-from src.core.utils import get_boto3_client
+from src.core.utils import AsyncClientManager
 
 
 @dataclass
 class EbsResourceHandlers(ResourceHandler):
     def __init__(self, region_name: str):
-        self._boto3 = get_boto3_client("ec2", region_name)
+        self.region_name = region_name
+        self._client_manager = AsyncClientManager(region_name)
 
-    def find_under_utilized_resource(self) -> Dict:
-        volumes = self._boto3.describe_volumes(Filters=[{"Name": "status", "Values": ["available"]}]).get("Volumes", [])
+    async def find_under_utilized_resource(self) -> Dict:
+        async with self._client_manager as manager:
+            async with manager.get_client("ec2") as ec2:
+                volumes = await ec2.describe_volumes(Filters=[{"Name": "status", "Values": ["available"]}])
+                volumes = volumes.get("Volumes", [])
 
         unused_vols = []
         for vol in volumes:
