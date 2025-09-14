@@ -7,7 +7,10 @@ from src.core.aws.config import Config
 from src.core.aws.resource_handlers.ebs import EbsResourceHandlers
 from src.core.aws.resource_handlers.lb import LoadBalancerResourceHandlers
 from src.core.aws.resource_handlers.rds import RdsHandler
-from src.core.utils import get_common_elements
+from src.core.aws.excel_report_generator import ExcelReportGenerator
+from src.core.utils import get_common_elements, get_logger
+
+logger = get_logger()
 
 
 @dataclass
@@ -37,12 +40,37 @@ class AwsCostManager:
 
         return unused_resources
 
+    async def get_unused_resources_report(self, services: List[str] = [], output_path: str = None) -> str:
+        """
+        Generate an Excel report for unused resources.
+
+        Args:
+            services: List of services to analyze. If empty, analyzes all supported services.
+            output_path: Optional custom path for the Excel file.
+
+        Returns:
+            Path to the generated Excel report file.
+        """
+        # Get unused resources data
+        unused_resources = await self.get_unused_resources(services)
+
+        # Generate Excel report
+        report_generator = ExcelReportGenerator()
+        report_path = report_generator.generate_report(
+            unused_resources=unused_resources, region=self._region, output_path=output_path
+        )
+
+        return report_path
+
 
 if __name__ == "__main__":
 
     async def main():
         cost_manager = AwsCostManager(os.getenv("AWS_REGION"))
+
+        report_path = await cost_manager.get_unused_resources_report()
+        logger.info(f"Report generated successfully: {report_path}")
         result = await cost_manager.get_unused_resources()
-        print(result)
+        logger.info(result)
 
     asyncio.run(main())
