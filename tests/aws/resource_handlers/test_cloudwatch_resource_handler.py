@@ -1,6 +1,5 @@
 import unittest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock
 from datetime import datetime, timedelta
 
 from src.core.aws.resource_handlers.cloudwatch import CloudWatch
@@ -27,7 +26,7 @@ class TestCloudWatchResourceHandler(unittest.TestCase):
         # Mock the AsyncClientManager instance
         mock_client_manager = AsyncMock()
         mock_client_manager_class.return_value = mock_client_manager
-        
+
         # Mock the get_client context manager
         mock_cw_client = AsyncMock()
         mock_cw_client.get_metric_data.return_value = mock_cloudwatch_metric_response
@@ -93,7 +92,7 @@ class TestCloudWatchResourceHandler(unittest.TestCase):
         # Mock the AsyncClientManager instance
         mock_client_manager = AsyncMock()
         mock_client_manager_class.return_value = mock_client_manager
-        
+
         # Mock the get_client context manager
         mock_cw_client = AsyncMock()
         mock_cw_client.get_metric_data.return_value = mock_cloudwatch_empty_response

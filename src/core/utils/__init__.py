@@ -14,4 +14,4 @@ def get_logger():
     return logger
 
 
-__all__ = ['get_common_elements', 'get_logger', 'AsyncClientManager']
+__all__ = ["get_common_elements", "get_logger", "AsyncClientManager"]

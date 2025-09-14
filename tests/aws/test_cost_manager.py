@@ -1,14 +1,11 @@
 import unittest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock, MagicMock
 
 from src.core.aws.cost_manager import AwsCostManager
 from tests.aws.resource_handlers.mock import (
     mock_volume_response,
     mock_lb_response,
     mock_rds_instances_response,
-    mock_cloudwatch_metric_response,
-    mock_cloudwatch_empty_response,
     mock_lb_health_response_all_unhealthy,
     mock_lb_health_response_healthy,
 )
@@ -214,3 +211,112 @@ class TestAwsCostManager(unittest.TestCase):
         self.assertIn("ebs", service_names)
         self.assertIn("lb", service_names)
         self.assertIn("rds", service_names)
+
+    @patch("src.core.aws.excel_report_generator.ExcelReportGenerator")
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_get_unused_resources_report(self, mock_get_client, mock_excel_generator):
+        """Test the get_unused_resources_report method."""
+        # Create mock clients
+        mock_ec2_client = AsyncMock()
+        mock_elb_client = AsyncMock()
+        mock_rds_client = AsyncMock()
+
+        # Mock responses
+        mock_ec2_client.describe_volumes.return_value = mock_volume_response
+        mock_elb_client.describe_load_balancers.return_value = mock_lb_response
+        mock_elb_client.describe_instance_health.side_effect = [
+            mock_lb_health_response_all_unhealthy,
+            mock_lb_health_response_healthy,
+        ]
+        mock_rds_client.describe_db_instances.return_value = mock_rds_instances_response
+
+        # Mock the get_client to return different clients based on service
+        def mock_client_factory(service_name, region_name):
+            if service_name == "ec2":
+                return mock_ec2_client
+            elif service_name == "elb":
+                return mock_elb_client
+            elif service_name == "rds":
+                return mock_rds_client
+            return AsyncMock()
+
+        mock_get_client.side_effect = mock_client_factory
+
+        # Mock ExcelReportGenerator
+        mock_generator_instance = MagicMock()
+        mock_generator_instance.generate_report.return_value = "test_report.xlsx"
+        mock_excel_generator.return_value = mock_generator_instance
+
+        # Create a new AwsCostManager instance after mocking boto3
+        aws_cost_manager = AwsCostManager("us-east-1")
+
+        # Test with default parameters
+        report_path = await aws_cost_manager.get_unused_resources_report()
+
+        # Verify ExcelReportGenerator was called
+        mock_excel_generator.assert_called_once()
+        mock_generator_instance.generate_report.assert_called_once()
+
+        # Verify the call arguments
+        call_args = mock_generator_instance.generate_report.call_args
+        self.assertEqual(call_args[1]["region"], "us-east-1")
+        self.assertIsNone(call_args[1]["output_path"])
+        self.assertEqual(report_path, "test_report.xlsx")
+
+    @patch("src.core.aws.excel_report_generator.ExcelReportGenerator")
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_get_unused_resources_report_with_custom_path(self, mock_get_client, mock_excel_generator):
+        """Test the get_unused_resources_report method with custom output path."""
+        # Create mock clients
+        mock_ec2_client = AsyncMock()
+        mock_ec2_client.describe_volumes.return_value = mock_volume_response
+        mock_get_client.return_value.__aenter__.return_value = mock_ec2_client
+
+        # Mock ExcelReportGenerator
+        mock_generator_instance = MagicMock()
+        mock_generator_instance.generate_report.return_value = "custom_report.xlsx"
+        mock_excel_generator.return_value = mock_generator_instance
+
+        # Create a new AwsCostManager instance after mocking boto3
+        aws_cost_manager = AwsCostManager("us-east-1")
+
+        # Test with custom output path
+        custom_path = "custom_report.xlsx"
+        report_path = await aws_cost_manager.get_unused_resources_report(services=["ebs"], output_path=custom_path)
+
+        # Verify ExcelReportGenerator was called with custom path
+        mock_generator_instance.generate_report.assert_called_once()
+        call_args = mock_generator_instance.generate_report.call_args
+        self.assertEqual(call_args[1]["output_path"], custom_path)
+        self.assertEqual(report_path, "custom_report.xlsx")
+
+    @patch("src.core.aws.excel_report_generator.ExcelReportGenerator")
+    @patch("src.core.utils.AsyncClientManager")
+    async def test_get_unused_resources_report_with_specific_services(self, mock_get_client, mock_excel_generator):
+        """Test the get_unused_resources_report method with specific services."""
+        # Create mock clients
+        mock_ec2_client = AsyncMock()
+        mock_ec2_client.describe_volumes.return_value = mock_volume_response
+        mock_get_client.return_value.__aenter__.return_value = mock_ec2_client
+
+        # Mock ExcelReportGenerator
+        mock_generator_instance = MagicMock()
+        mock_generator_instance.generate_report.return_value = "ebs_report.xlsx"
+        mock_excel_generator.return_value = mock_generator_instance
+
+        # Create a new AwsCostManager instance after mocking boto3
+        aws_cost_manager = AwsCostManager("us-east-1")
+
+        # Test with specific services
+        report_path = await aws_cost_manager.get_unused_resources_report(services=["ebs"])
+
+        # Verify ExcelReportGenerator was called
+        mock_generator_instance.generate_report.assert_called_once()
+        call_args = mock_generator_instance.generate_report.call_args
+
+        # Verify that only EBS data was passed
+        unused_resources = call_args[1]["unused_resources"]
+        self.assertEqual(len(unused_resources), 1)
+        self.assertIn("ebs", unused_resources[0])
+
+        self.assertEqual(report_path, "ebs_report.xlsx")

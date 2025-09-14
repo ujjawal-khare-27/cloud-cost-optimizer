@@ -1,15 +1,10 @@
 import unittest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock
 
 from src.core.aws.resource_handlers.rds import RdsHandler
 from tests.aws.resource_handlers.mock import (
     mock_rds_instances_response,
     mock_rds_empty_response,
-    mock_cloudwatch_metric_response,
-    mock_cloudwatch_empty_response,
-    mock_cloudwatch_no_connections_response,
-    mock_cloudwatch_some_connections_response,
 )
 
 

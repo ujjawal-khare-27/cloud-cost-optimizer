@@ -1,6 +1,5 @@
 import unittest
-import asyncio
-from unittest.mock import patch, MagicMock, AsyncMock
+from unittest.mock import patch, AsyncMock
 
 from src.core.aws.resource_handlers.lb import LoadBalancerResourceHandlers
 from tests.aws.resource_handlers.mock import (
