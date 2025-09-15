@@ -26,6 +26,6 @@ Currently, it supports **AWS** with recommendations for:
 ### Resource-Specific Recommendations
 
 Each supported AWS resource has detailed documentation on how recommendations are generated:
-1. [Amazon RDS](src/core/aws/resource_handlers/rds.md) 
-2. [Load Balancers](src/core/aws/resource_handlers/lb.md)
-3. [Amazon EBS](src/core/aws/resource_handlers/ebs.md)
+1. [Amazon RDS](src/core/aws/resource_handlers/readme/rds.md) 
+2. [Load Balancers](src/core/aws/resource_handlers/readme/lb.md)
+3. [Amazon EBS](src/core/aws/resource_handlers/readme/ebs.md)
