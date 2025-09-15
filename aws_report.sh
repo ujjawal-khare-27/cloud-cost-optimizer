@@ -1,4 +1,4 @@
 #!/bin/bash
 
-export AWS_REGION="us-east-1"
+pip3 install -r requirements.txt
 python3 -m src.core.aws.cost_manager
