@@ -372,3 +372,114 @@ mock_rds_empty_response = {
         "RetryAttempts": 0,
     },
 }
+
+# S3 mock data
+mock_s3_buckets_response = {
+    "Buckets": [
+        {
+            "Name": "test-bucket-1",
+            "CreationDate": "2023-10-01T12:34:56.000Z"
+        },
+        {
+            "Name": "test-bucket-2", 
+            "CreationDate": "2023-11-15T08:22:10.000Z"
+        },
+        {
+            "Name": "test-bucket-3",
+            "CreationDate": "2023-12-01T15:45:30.000Z"
+        }
+    ],
+    "Owner": {
+        "DisplayName": "test-user",
+        "ID": "1234567890123456789012345678901234567890123456789012345678901234"
+    },
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+mock_s3_empty_response = {
+    "Buckets": [],
+    "Owner": {
+        "DisplayName": "test-user",
+        "ID": "1234567890123456789012345678901234567890123456789012345678901234"
+    },
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+# S3 CloudWatch metrics mock data
+mock_s3_requests_metrics_response = {
+    "Datapoints": [
+        {"Timestamp": "2023-10-01T12:00:00.000Z", "Sum": 100.0, "Unit": "Count"},
+        {"Timestamp": "2023-10-01T12:10:00.000Z", "Sum": 50.0, "Unit": "Count"},
+        {"Timestamp": "2023-10-01T12:20:00.000Z", "Sum": 25.0, "Unit": "Count"},
+    ],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+mock_s3_no_requests_metrics_response = {
+    "Datapoints": [
+        {"Timestamp": "2023-10-01T12:00:00.000Z", "Sum": 0.0, "Unit": "Count"},
+        {"Timestamp": "2023-10-01T12:10:00.000Z", "Sum": 0.0, "Unit": "Count"},
+        {"Timestamp": "2023-10-01T12:20:00.000Z", "Sum": 0.0, "Unit": "Count"},
+    ],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+mock_s3_bucket_size_metrics_response = {
+    "Datapoints": [
+        {"Timestamp": "2023-10-01T12:00:00.000Z", "Average": 1073741824.0, "Unit": "Bytes"},  # 1 GB
+    ],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
+
+mock_s3_bucket_size_empty_response = {
+    "Datapoints": [],
+    "ResponseMetadata": {
+        "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
+        "HTTPStatusCode": 200,
+        "HTTPHeaders": {
+            "content-type": "json",
+            "date": "Wed, 10 Sep 2025 12:00:00 GMT",
+        },
+        "RetryAttempts": 0,
+    },
+}
