@@ -1,3 +1,4 @@
+import asyncio
 from dataclasses import dataclass
 from datetime import datetime, timedelta
 from typing import Dict, List, Any
@@ -63,9 +64,17 @@ class RdsHandler(ResourceHandler):
 
     async def _get_rds_with_no_connections(self, rds_list: List[Dict]) -> List[Any]:
         rds_with_no_connections = []
-        for rds in rds_list:
-            max_connection = await self._get_max_connections_for_cluster(rds.get("DBClusterIdentifier"))
 
+        max_connection_tasks = []
+        for rds in rds_list:
+            max_connection_tasks.append(
+                asyncio.create_task(self._get_max_connections_for_cluster(rds.get("DBClusterIdentifier"))))
+
+        max_connections = await asyncio.gather(*max_connection_tasks, return_exceptions=True)
+
+        for idx in range(len(rds_list)):
+            max_connection = max_connections[idx]
+            rds = rds_list[idx]
             if max_connection == 0:
                 rds_with_no_connections.append(rds)
 
@@ -73,9 +82,16 @@ class RdsHandler(ResourceHandler):
 
     async def _get_rds_instances_with_no_connections(self, rds_list: List[Dict]):
         rds_instances_with_no_connections = []
-        for rds in rds_list:
-            max_connection = await self._get_max_connection_for_instance(rds.get("DBInstanceIdentifier"))
 
+        max_connection_tasks = []
+        for rds in rds_list:
+            max_connection_tasks.append(asyncio.create_task(self._get_max_connection_for_instance(rds.get("DBInstanceIdentifier"))))
+
+        max_connections = await asyncio.gather(*max_connection_tasks, return_exceptions=True)
+
+        for idx in range(len(rds_list)):
+            max_connection = max_connections[idx]
+            rds = rds_list[idx]
             if max_connection == 0:
                 rds_instances_with_no_connections.append(rds)
 
