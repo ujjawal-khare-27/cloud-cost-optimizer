@@ -129,7 +129,7 @@ class ExcelReportGenerator:
                     for resource in resource_list:
                         for col_idx, header in enumerate(headers, 1):
                             value = resource.get(header, "")
-                            cell = worksheet.cell(row=row, column=col_idx, value=value)
+                            cell = worksheet.cell(row=row, column=col_idx, value=str(value))
                             cell.border = self.border
                             if isinstance(value, (int, float)):
                                 cell.alignment = self.center_alignment

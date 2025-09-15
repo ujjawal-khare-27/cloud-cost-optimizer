@@ -7,7 +7,7 @@ from src.core.aws.config import Config
 from src.core.aws.resource_handlers.ebs import EbsResourceHandlers
 from src.core.aws.resource_handlers.lb import LoadBalancerResourceHandlers
 from src.core.aws.resource_handlers.rds import RdsHandler
-from src.core.aws.excel_report_generator import ExcelReportGenerator
+from src.core.utils.excel_report_generator import ExcelReportGenerator
 from src.core.utils import get_common_elements, get_logger
 
 logger = get_logger()
@@ -68,7 +68,5 @@ if __name__ == "__main__":
 
         report_path = await cost_manager.get_unused_resources_report()
         logger.info(f"Report generated successfully: {report_path}")
-        result = await cost_manager.get_unused_resources()
-        logger.info(result)
 
     asyncio.run(main())

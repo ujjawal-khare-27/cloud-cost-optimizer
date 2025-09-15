@@ -3,7 +3,7 @@ import os
 import tempfile
 from openpyxl import load_workbook
 
-from src.core.aws.excel_report_generator import ExcelReportGenerator
+from src.core.utils.excel_report_generator import ExcelReportGenerator
 
 
 class TestExcelReportGenerator(unittest.TestCase):
@@ -148,7 +148,7 @@ class TestExcelReportGenerator(unittest.TestCase):
         # Check that we have the expected volume data
         # The first volume should be in row 5 (after title, spacing, and headers)
         self.assertEqual(ebs_sheet["A5"].value, "vol-0123456789abcdef0")
-        self.assertEqual(ebs_sheet["B5"].value, 8)
+        self.assertEqual(ebs_sheet["B5"].value, '8')
         self.assertEqual(ebs_sheet["C5"].value, "available")
         self.assertEqual(ebs_sheet["D5"].value, "us-east-1a")
 
