@@ -58,7 +58,7 @@ class S3ResourceHandlers(ResourceHandler):
 
         if s3_metrics["Datapoints"]:
             size_bytes = s3_metrics["Datapoints"][0]["Average"]
-            size_gb = size_bytes / (1024 ** 3)
+            size_gb = size_bytes / (1024**3)
             return size_gb
         else:
             return None

@@ -68,7 +68,8 @@ class RdsHandler(ResourceHandler):
         max_connection_tasks = []
         for rds in rds_list:
             max_connection_tasks.append(
-                asyncio.create_task(self._get_max_connections_for_cluster(rds.get("DBClusterIdentifier"))))
+                asyncio.create_task(self._get_max_connections_for_cluster(rds.get("DBClusterIdentifier")))
+            )
 
         max_connections = await asyncio.gather(*max_connection_tasks, return_exceptions=True)
 
@@ -85,7 +86,9 @@ class RdsHandler(ResourceHandler):
 
         max_connection_tasks = []
         for rds in rds_list:
-            max_connection_tasks.append(asyncio.create_task(self._get_max_connection_for_instance(rds.get("DBInstanceIdentifier"))))
+            max_connection_tasks.append(
+                asyncio.create_task(self._get_max_connection_for_instance(rds.get("DBInstanceIdentifier")))
+            )
 
         max_connections = await asyncio.gather(*max_connection_tasks, return_exceptions=True)
 
