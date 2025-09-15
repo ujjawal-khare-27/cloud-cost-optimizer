@@ -7,6 +7,7 @@ from src.core.aws.config import Config
 from src.core.aws.resource_handlers.ebs import EbsResourceHandlers
 from src.core.aws.resource_handlers.lb import LoadBalancerResourceHandlers
 from src.core.aws.resource_handlers.rds import RdsHandler
+from src.core.aws.resource_handlers.s3 import S3ResourceHandlers
 from src.core.utils.excel_report_generator import ExcelReportGenerator
 from src.core.utils import get_common_elements, get_logger
 
@@ -24,6 +25,7 @@ class AwsCostManager:
             "ebs": EbsResourceHandlers(self._region),
             "lb": LoadBalancerResourceHandlers(self._region),
             "rds": RdsHandler(self._region),
+            "s3": S3ResourceHandlers(self._region),
         }
 
     async def get_unused_resources(self, services: List[str] = []):

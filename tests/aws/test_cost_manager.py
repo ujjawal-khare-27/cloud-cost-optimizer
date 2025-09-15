@@ -8,6 +8,7 @@ from tests.aws.resource_handlers.mock import (
     mock_rds_instances_response,
     mock_lb_health_response_all_unhealthy,
     mock_lb_health_response_healthy,
+    mock_s3_buckets_response,
 )
 
 
@@ -320,3 +321,123 @@ class TestAwsCostManager(unittest.TestCase):
         self.assertIn("ebs", unused_resources[0])
 
         self.assertEqual(report_path, "ebs_report.xlsx")
+
+    @patch("src.core.utils.AsyncClientManager")
+    @patch("src.core.aws.resource_handlers.cloudwatch.CloudWatch.get_metrics")
+    async def test_aws_cost_manager_s3(self, mock_get_metrics, mock_get_client):
+        """Test AwsCostManager with S3 service - basic happy case"""
+        # Create mock S3 client
+        mock_s3_client = AsyncMock()
+        mock_s3_client.list_buckets.return_value = mock_s3_buckets_response
+        mock_get_client.return_value.__aenter__.return_value = mock_s3_client
+
+        # Mock CloudWatch responses - some buckets have no requests, others have requests
+        mock_get_metrics.side_effect = [
+            [{"Sum": 100.0}],  # test-bucket-1 has requests
+            [{"Sum": 0.0}],  # test-bucket-2 has no requests
+            [{"Sum": 0.0}],  # test-bucket-3 has no requests
+            [{"Average": 1073741824.0}],  # test-bucket-2 size (1 GB)
+            [{"Average": 2147483648.0}],  # test-bucket-3 size (2 GB)
+        ]
+
+        # Create a new AwsCostManager instance after mocking boto3
+        aws_cost_manager = AwsCostManager("us-east-1")
+        unused_resources = await aws_cost_manager.get_unused_resources(["s3"])
+
+        # Verify the result structure
+        self.assertEqual(len(unused_resources), 1)
+        self.assertIn("s3", unused_resources[0])
+
+        s3_result = unused_resources[0]["s3"]
+
+        # Should find 2 buckets with no requests (test-bucket-2 and test-bucket-3)
+        self.assertEqual(len(s3_result), 2)
+
+        # Verify the buckets found have no requests
+        bucket_names = [bucket["Name"] for bucket in s3_result]
+        self.assertIn("test-bucket-2", bucket_names)
+        self.assertIn("test-bucket-3", bucket_names)
+
+        # Verify bucket sizes are included
+        for bucket in s3_result:
+            self.assertIn("Size", bucket)
+            self.assertIsNotNone(bucket["Size"])
+
+        # Verify the S3 client was called correctly
+        mock_s3_client.list_buckets.assert_called_once()
+
+    @patch("src.core.utils.AsyncClientManager")
+    @patch("src.core.aws.resource_handlers.cloudwatch.CloudWatch.get_metrics")
+    async def test_aws_cost_manager_s3_no_unused_buckets(self, mock_get_metrics, mock_get_client):
+        """Test AwsCostManager with S3 service when no buckets are unused"""
+        # Create mock S3 client
+        mock_s3_client = AsyncMock()
+        mock_s3_client.list_buckets.return_value = mock_s3_buckets_response
+        mock_get_client.return_value.__aenter__.return_value = mock_s3_client
+
+        # Mock CloudWatch responses - all buckets have requests
+        mock_get_metrics.side_effect = [
+            [{"Sum": 100.0}],  # test-bucket-1 has requests
+            [{"Sum": 50.0}],  # test-bucket-2 has requests
+            [{"Sum": 25.0}],  # test-bucket-3 has requests
+        ]
+
+        # Create a new AwsCostManager instance after mocking boto3
+        aws_cost_manager = AwsCostManager("us-east-1")
+        unused_resources = await aws_cost_manager.get_unused_resources(["s3"])
+
+        # Verify the result structure
+        self.assertEqual(len(unused_resources), 1)
+        self.assertIn("s3", unused_resources[0])
+
+        s3_result = unused_resources[0]["s3"]
+
+        # Should find no unused buckets
+        self.assertEqual(len(s3_result), 0)
+
+    @patch("src.core.aws.excel_report_generator.ExcelReportGenerator")
+    @patch("src.core.utils.AsyncClientManager")
+    @patch("src.core.aws.resource_handlers.cloudwatch.CloudWatch.get_metrics")
+    async def test_get_unused_resources_report_with_s3(self, mock_get_metrics, mock_get_client, mock_excel_generator):
+        """Test the get_unused_resources_report method with S3 service."""
+        # Create mock S3 client
+        mock_s3_client = AsyncMock()
+        mock_s3_client.list_buckets.return_value = mock_s3_buckets_response
+        mock_get_client.return_value.__aenter__.return_value = mock_s3_client
+
+        # Mock CloudWatch responses - some buckets have no requests
+        mock_get_metrics.side_effect = [
+            [{"Sum": 0.0}],  # test-bucket-1 has no requests
+            [{"Sum": 0.0}],  # test-bucket-2 has no requests
+            [{"Sum": 0.0}],  # test-bucket-3 has no requests
+            [{"Average": 1073741824.0}],  # test-bucket-1 size
+            [{"Average": 2147483648.0}],  # test-bucket-2 size
+            [{"Average": 3221225472.0}],  # test-bucket-3 size
+        ]
+
+        # Mock ExcelReportGenerator
+        mock_generator_instance = MagicMock()
+        mock_generator_instance.generate_report.return_value = "s3_report.xlsx"
+        mock_excel_generator.return_value = mock_generator_instance
+
+        # Create a new AwsCostManager instance after mocking boto3
+        aws_cost_manager = AwsCostManager("us-east-1")
+
+        # Test with S3 service
+        report_path = await aws_cost_manager.get_unused_resources_report(services=["s3"])
+
+        # Verify ExcelReportGenerator was called
+        mock_excel_generator.assert_called_once()
+        mock_generator_instance.generate_report.assert_called_once()
+
+        # Verify the call arguments
+        call_args = mock_generator_instance.generate_report.call_args
+        self.assertEqual(call_args[1]["region"], "us-east-1")
+        self.assertIsNone(call_args[1]["output_path"])
+
+        # Verify that S3 data was passed
+        unused_resources = call_args[1]["unused_resources"]
+        self.assertEqual(len(unused_resources), 1)
+        self.assertIn("s3", unused_resources[0])
+
+        self.assertEqual(report_path, "s3_report.xlsx")

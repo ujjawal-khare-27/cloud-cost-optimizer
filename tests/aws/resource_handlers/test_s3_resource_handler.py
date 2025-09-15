@@ -213,7 +213,9 @@ class TestS3ResourceHandlers(unittest.TestCase):
     @patch("src.core.utils.AsyncClientManager")
     @patch("src.core.aws.resource_handlers.s3.S3ResourceHandlers.get_number_of_requests")
     @patch("src.core.aws.resource_handlers.s3.S3ResourceHandlers.get_bucket_size")
-    async def test_find_under_utilized_resource_comprehensive(self, mock_get_bucket_size, mock_get_requests, mock_get_client):
+    async def test_find_under_utilized_resource_comprehensive(
+        self, mock_get_bucket_size, mock_get_requests, mock_get_client
+    ):
         """Test find_under_utilized_resource with comprehensive scenario"""
         mock_s3_client = AsyncMock()
         mock_s3_client.list_buckets.return_value = mock_s3_buckets_response
@@ -236,7 +238,9 @@ class TestS3ResourceHandlers(unittest.TestCase):
     @patch("src.core.utils.AsyncClientManager")
     @patch("src.core.aws.resource_handlers.s3.S3ResourceHandlers.get_number_of_requests")
     @patch("src.core.aws.resource_handlers.s3.S3ResourceHandlers.get_bucket_size")
-    async def test_find_under_utilized_resource_no_underutilized(self, mock_get_bucket_size, mock_get_requests, mock_get_client):
+    async def test_find_under_utilized_resource_no_underutilized(
+        self, mock_get_bucket_size, mock_get_requests, mock_get_client
+    ):
         """Test find_under_utilized_resource when no resources are underutilized"""
         mock_s3_client = AsyncMock()
         mock_s3_client.list_buckets.return_value = mock_s3_buckets_response

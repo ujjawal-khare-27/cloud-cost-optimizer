@@ -376,23 +376,11 @@ mock_rds_empty_response = {
 # S3 mock data
 mock_s3_buckets_response = {
     "Buckets": [
-        {
-            "Name": "test-bucket-1",
-            "CreationDate": "2023-10-01T12:34:56.000Z"
-        },
-        {
-            "Name": "test-bucket-2", 
-            "CreationDate": "2023-11-15T08:22:10.000Z"
-        },
-        {
-            "Name": "test-bucket-3",
-            "CreationDate": "2023-12-01T15:45:30.000Z"
-        }
+        {"Name": "test-bucket-1", "CreationDate": "2023-10-01T12:34:56.000Z"},
+        {"Name": "test-bucket-2", "CreationDate": "2023-11-15T08:22:10.000Z"},
+        {"Name": "test-bucket-3", "CreationDate": "2023-12-01T15:45:30.000Z"},
     ],
-    "Owner": {
-        "DisplayName": "test-user",
-        "ID": "1234567890123456789012345678901234567890123456789012345678901234"
-    },
+    "Owner": {"DisplayName": "test-user", "ID": "1234567890123456789012345678901234567890123456789012345678901234"},
     "ResponseMetadata": {
         "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
         "HTTPStatusCode": 200,
@@ -406,10 +394,7 @@ mock_s3_buckets_response = {
 
 mock_s3_empty_response = {
     "Buckets": [],
-    "Owner": {
-        "DisplayName": "test-user",
-        "ID": "1234567890123456789012345678901234567890123456789012345678901234"
-    },
+    "Owner": {"DisplayName": "test-user", "ID": "1234567890123456789012345678901234567890123456789012345678901234"},
     "ResponseMetadata": {
         "RequestId": "12345678-90ab-cdef-1234-567890abcdef",
         "HTTPStatusCode": 200,
